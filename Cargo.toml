@@ -1,6 +1,7 @@
 [package]
 name = "elevators"
 version = "0.1.0"
+authors = ["Ian Philip Eglin <philip@eglin.no>"]
 edition = "2021"
 
 [dependencies]
