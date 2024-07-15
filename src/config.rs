@@ -2,12 +2,12 @@ use serde::Deserialize;
 use std::fs;
 
 #[destruct(Deserialize)]
-struct Config {
+pub struct Config {
     hardware: HardwareConfig,
 }
 
 #[destruct(Deserialize)]
-struct HardwareConfig {
+pub struct HardwareConfig {
     NUM_FLOORS: u8,
     DRIVER_ADRESS: String,
     DRIVER_PORT: u32,
