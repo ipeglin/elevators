@@ -1,9 +1,12 @@
 use crossbeam_channel as channel;
 use elevator::ElevatorDriver;
 
+mod config;
 mod elevator;
 
 fn main() {
+    let config = config::load();
+
     // hardware
     let (_hw_terminate_tx, hw_terminate_rx) = channel::unbounded::<()>();
     let (hw_motor_direction_tx, hw_motor_direction_rx) = channel::unbounded::<u8>();
@@ -16,6 +19,7 @@ fn main() {
     let (hw_obstruction_tx, hw_obstruction_rx) = channel::unbounded::<bool>();
 
     let elevator_driver = ElevatorDriver::new(
+        &config.hardware,
         hw_motor_direction_rx,
         hw_button_light_rx,
         hw_requests_tx,
