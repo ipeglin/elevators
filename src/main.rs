@@ -30,4 +30,6 @@ fn main() {
         hw_obstruction_tx,
         hw_terminate_rx,
     );
+
+    // TODO: spawn pass instance to thread and run
 }
