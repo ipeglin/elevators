@@ -2,13 +2,14 @@ use std::time::Duration;
 
 use crossbeam_channel as channel;
 
+use crate::config::HardwareConfig;
+
 use driver_rust::elevio::elev::Elevator;
 use driver_rust::elevio::elev::{CAB, HALL_DOWN, HALL_UP};
 
 use log::error;
 
 const NUM_CALL_VARIANTS: usize = 3;
-const NUM_FLOORS: u8 = 4;
 
 pub struct ElevatorDriver {
     elevator: Elevator,
@@ -30,6 +31,7 @@ pub struct ElevatorDriver {
 
 impl ElevatorDriver {
     pub fn new(
+        config: &HardwareConfig,
         hw_motor_direction_rx: channel::Receiver<u8>,
         hw_button_light_rx: channel::Receiver<(u8, u8, bool)>,
         hw_request_tx: channel::Sender<(u8, u8)>,
@@ -41,12 +43,16 @@ impl ElevatorDriver {
         terminate_rx: channel::Receiver<()>,
     ) -> ElevatorDriver {
         ElevatorDriver {
-            elevator: Elevator::init("localhost:15657", NUM_FLOORS).unwrap(),
-            thread_sleep_time: 1_000,
+            elevator: Elevator::init(
+                &format!("{}:{}", &config.driver_address, &config.driver_port),
+                config.num_floors,
+            )
+            .unwrap(),
+            thread_sleep_time: config.driver_channel_poll_timeout_milliseconds,
             current_floor: u8::MAX, // because unknown starting position
             is_halted: false,
             is_obstructed: false,
-            requests: vec![vec![false; NUM_CALL_VARIANTS]; NUM_FLOORS as usize],
+            requests: vec![vec![false; NUM_CALL_VARIANTS]; config.num_floors as usize],
             hw_motor_direction_rx,
             hw_button_light_rx,
             hw_request_tx,
