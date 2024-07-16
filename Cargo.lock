@@ -32,6 +32,7 @@ dependencies = [
  "crossbeam-channel",
  "driver-rust",
  "log",
+ "serde",
  "toml",
 ]
 
