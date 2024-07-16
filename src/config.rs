@@ -8,10 +8,10 @@ pub struct Config {
 
 #[derive(Deserialize)]
 pub struct HardwareConfig {
-    NUM_FLOORS: u8,
-    DRIVER_ADRESS: String,
-    DRIVER_PORT: u32,
-    DRIVER_CHANNEL_POLL_TIMEOUT_MILLISECONDS: u32,
+    pub num_floors: u8,
+    pub driver_address: String,
+    pub driver_port: u32,
+    pub driver_channel_poll_timeout_milliseconds: u64,
 }
 
 pub fn load() -> Config {
