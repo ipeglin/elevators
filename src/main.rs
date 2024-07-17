@@ -1,5 +1,6 @@
 use crossbeam_channel as channel;
 use elevator::ElevatorDriver;
+use std::thread;
 
 mod config;
 mod elevator;
@@ -30,6 +31,8 @@ fn main() {
         hw_obstruction_tx,
         hw_terminate_rx,
     );
+
+    let driver_thread = thread::spawn(move || elevator_driver.run());
 
     // TODO: spawn pass instance to thread and run
 }
