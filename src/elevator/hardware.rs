@@ -7,7 +7,7 @@ use crate::config::HardwareConfig;
 use driver_rust::elevio::elev::Elevator;
 use driver_rust::elevio::elev::{CAB, HALL_DOWN, HALL_UP};
 
-use log::error;
+use log::{error, info};
 
 const NUM_CALL_VARIANTS: usize = 3;
 
@@ -66,6 +66,8 @@ impl ElevatorDriver {
     }
 
     pub fn run(mut self) {
+        info!("Starting hardware driver");
+
         self.is_obstructed = self.elevator.obstruction();
 
         // reset light on init
