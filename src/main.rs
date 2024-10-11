@@ -32,7 +32,17 @@ fn main() {
         hw_terminate_rx,
     );
 
-    let driver_thread = thread::spawn(move || elevator_driver.run());
-
     // TODO: spawn pass instance to thread and run
+    let driver_thread = thread::Builder::new().name("driver".into());
+    driver_thread
+        .spawn(move || {
+            elevator_driver
+                .expect("Failed to initiate ElevatorDriver")
+                .run()
+        })
+        .unwrap();
+
+    loop {
+        thread::sleep(std::time::Duration::from_secs(1))
+    }
 }

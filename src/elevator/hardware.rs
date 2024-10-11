@@ -41,13 +41,13 @@ impl ElevatorDriver {
         hw_emergency_halt_tx: channel::Sender<bool>,
         hw_obstruction_tx: channel::Sender<bool>,
         terminate_rx: channel::Receiver<()>,
-    ) -> ElevatorDriver {
-        ElevatorDriver {
-            elevator: Elevator::init(
-                &format!("{}:{}", &config.driver_address, &config.driver_port),
-                config.num_floors,
-            )
-            .unwrap(),
+    ) -> Result<ElevatorDriver, std::io::Error> {
+        let elev = Elevator::init(
+            &format!("{}:{}", config.driver_address, config.driver_port)[..],
+            config.num_floors,
+        )?;
+        Ok(ElevatorDriver {
+            elevator: elev,
             thread_sleep_time: config.driver_channel_poll_timeout_milliseconds,
             current_floor: u8::MAX, // because unknown starting position
             is_halted: false,
@@ -62,7 +62,7 @@ impl ElevatorDriver {
             hw_emergency_halt_tx,
             hw_obstruction_tx,
             terminate_rx,
-        }
+        })
     }
 
     pub fn run(mut self) {
