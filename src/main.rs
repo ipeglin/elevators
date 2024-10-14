@@ -38,7 +38,7 @@ fn main() {
         .spawn(move || {
             elevator_driver
                 .expect("Failed to initiate ElevatorDriver")
-                .run()
+                .run();
         })
         .unwrap();
 
