@@ -1,12 +1,15 @@
+mod clock;
+
+use clock::init_clock;
 use crossbeam_channel as channel;
 use elevator::ElevatorDriver;
 use std::thread;
+use uhlc::ID;
 
-mod config;
-mod elevator;
-
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = config::load();
+    let node_id = ID::try_from([0x01, 0x02, 0x03])?;
+    init_clock(node_id)?;
 
     // hardware
     let (_hw_terminate_tx, hw_terminate_rx) = channel::unbounded::<()>();

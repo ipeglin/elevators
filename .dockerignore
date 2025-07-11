@@ -1,0 +1,26 @@
+# Ignore development files
+.git/
+.gitignore
+README.md
+.env
+.env.*
+
+# Ignore Rust build artifacts (but keep Cargo.lock for reproducible builds)
+target/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore Docker files (except the ones we need)
+docker-compose.override.yml
+
+# Ignore documentation
+docs/
+*.md

@@ -1,0 +1,55 @@
+services:
+  # Elevator simulator server (for development)
+  elevator-simulator:
+    build:
+      context: .
+      target: simulator
+    container_name: elevator-simulator
+    ports:
+      - "15657:15657"
+    networks:
+      - elevator-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "15657"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - dev
+
+  # Rust elevator controller application
+  elevator-controller:
+    build:
+      context: .
+      target: runtime
+    container_name: elevator-controller
+    depends_on:
+      elevator-simulator:
+        condition: service_healthy
+    volumes:
+      - ./config-dev.toml:/app/config.toml:ro
+    networks:
+      - elevator-network
+    profiles:
+      - dev
+    environment:
+      - RUST_LOG=info
+
+  # Production elevator controller (connects to real hardware)
+  elevator-controller-prod:
+    build:
+      context: .
+      target: runtime
+    container_name: elevator-controller-prod
+    network_mode: host  # Allows access to host hardware interfaces
+    volumes:
+      - ./config-prod.toml:/app/config.toml:ro
+    profiles:
+      - prod
+    environment:
+      - RUST_LOG=info
+    privileged: true  # May be needed for hardware access
+
+networks:
+  elevator-network:
+    driver: bridge
