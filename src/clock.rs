@@ -25,41 +25,41 @@ impl TimestampExt for Timestamp {
 // Global HLC instance
 static GLOBAL_HLC: OnceLock<Arc<HLC>> = OnceLock::new();
 
-/// Initialize the global clock with a specific ID
-/// This should be called once at application startup
+// Initialize the global clock with a specific ID
+// This should be called once at application startup
 pub fn init_clock(node_id: ID) -> Result<(), &'static str> {
     let hlc = Arc::new(HLCBuilder::new().with_id(node_id).build());
 
     GLOBAL_HLC.set(hlc).map_err(|_| "Clock already initialized")
 }
 
-/// Initialize the global clock with a random ID
-/// This should be called once at application startup
+// Initialize the global clock with a random ID
+// This should be called once at application startup
 pub fn init_clock_with_random_id() -> Result<(), &'static str> {
     let hlc = Arc::new(HLC::default());
 
     GLOBAL_HLC.set(hlc).map_err(|_| "Clock already initialized")
 }
 
-/// Get a reference to the global HLC
-/// Panics if clock hasn't been initialized
+// Get a reference to the global HLC
+// Panics if clock hasn't been initialized
 pub fn get_clock() -> &'static Arc<HLC> {
     GLOBAL_HLC
         .get()
         .expect("Clock not initialized. Call init_clock() first.")
 }
 
-/// Generate a new timestamp using the global clock
+// Generate a new timestamp using the global clock
 pub fn current_timestamp() -> Timestamp {
     get_clock().new_timestamp()
 }
 
-/// Update the global clock with an external timestamp
+// Update the global clock with an external timestamp
 pub fn update_clock_with_timestamp(timestamp: &Timestamp) -> Result<(), String> {
     get_clock().update_with_timestamp(timestamp)
 }
 
-/// Get the ID of the global clock
+// Get the ID of the global clock
 pub fn get_clock_id() -> &'static ID {
     get_clock().get_id()
 }
@@ -72,11 +72,15 @@ mod tests {
     use std::sync::Barrier;
     use std::thread;
 
+    fn ensure_clock_initialized() {
+        let test_id = ID::try_from([0x42]).unwrap();
+        let _ = init_clock(test_id); // Ignore error if already initialized
+    }
+
     #[test]
     fn test_global_clock_thread_safety() {
-        // Initialize clock for test
-        let test_id = ID::try_from([0x42]).unwrap();
-        init_clock(test_id).unwrap();
+        // Initialize clock for test (ignore if already initialized)
+        ensure_clock_initialized();
 
         let barrier = StdArc::new(Barrier::new(4));
         let mut handles = vec![];
@@ -122,5 +126,36 @@ mod tests {
             all_timestamps.len(),
             "Found duplicate timestamps across threads"
         );
+    }
+
+    #[test]
+    fn test_clock_initialization() {
+        ensure_clock_initialized();
+
+        // Should be able to get timestamps
+        let ts1 = current_timestamp();
+        let ts2 = current_timestamp();
+        assert!(ts2 > ts1);
+    }
+
+    #[test]
+    fn test_clock_synchronization() {
+        ensure_clock_initialized();
+
+        let our_timestamp = current_timestamp();
+
+        // Create an external timestamp slightly in the future
+        let external_node_id = ID::try_from([0x99]).unwrap();
+        let future_time =
+            *our_timestamp.get_time() + uhlc::NTP64::from(std::time::Duration::from_millis(10));
+        let external_timestamp = uhlc::Timestamp::new(future_time, external_node_id);
+
+        // Should be able to update with external timestamp
+        assert!(update_clock_with_timestamp(&external_timestamp).is_ok());
+
+        // New timestamp should be greater than both
+        let new_timestamp = current_timestamp();
+        assert!(new_timestamp > our_timestamp);
+        assert!(new_timestamp > external_timestamp);
     }
 }
