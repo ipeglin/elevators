@@ -5,10 +5,6 @@ use uuid::Uuid;
 
 const ORDER_EXPIRY_SECONDS: u64 = 60;
 
-pub trait Expiration {
-    fn is_expired(&self) -> bool;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     Up,
@@ -25,7 +21,7 @@ pub struct Call {
 }
 
 impl Call {
-    /// Create a new Call with default expiration
+    // Create a new Call with default expiration
     pub fn new(target_floor: u8, direction: Direction) -> Self {
         let created_at = current_timestamp();
         let expires_at = created_at.add_duration(Duration::from_secs(ORDER_EXPIRY_SECONDS));
@@ -39,7 +35,7 @@ impl Call {
         }
     }
 
-    /// Create a new Call with custom expiration duration
+    // Create a new Call with custom expiration duration
     pub fn new_with_expiration(
         target_floor: u8,
         direction: Direction,
@@ -58,12 +54,6 @@ impl Call {
     }
 }
 
-impl Expiration for Call {
-    fn is_expired(&self) -> bool {
-        current_timestamp() > self.expires_at
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Command {
     pub id: Uuid,
@@ -75,7 +65,7 @@ pub struct Command {
 }
 
 impl Command {
-    /// Create a new Command with default expiration
+    // Create a new Command with default expiration
     pub fn new(target_floor: u8) -> Self {
         let created_at = current_timestamp();
         let expires_at = created_at.add_duration(Duration::from_secs(ORDER_EXPIRY_SECONDS));
@@ -90,7 +80,7 @@ impl Command {
         }
     }
 
-    /// Create a new Command with custom expiration duration
+    // Create a new Command with custom expiration duration
     pub fn new_with_expiration(target_floor: u8, expiration_seconds: u64) -> Self {
         let created_at = current_timestamp();
         let expires_at = created_at.add_duration(Duration::from_secs(expiration_seconds));
@@ -105,21 +95,31 @@ impl Command {
         }
     }
 
-    /// Claim this command for a specific elevator
+    // Claim this command for a specific elevator
     pub fn claim(&mut self, elevator_id: Uuid) {
         self.claimed_by = Some(elevator_id);
         self.claimed_at = Some(current_timestamp());
     }
 
-    /// Release the claim on this command
+    // Release the claim on this command
     pub fn release_claim(&mut self) {
         self.claimed_by = None;
         self.claimed_at = None;
     }
 
-    /// Check if the command is claimed
+    // Check if the command is claimed
     pub fn is_claimed(&self) -> bool {
         self.claimed_by.is_some()
+    }
+}
+
+pub trait Expiration {
+    fn is_expired(&self) -> bool;
+}
+
+impl Expiration for Call {
+    fn is_expired(&self) -> bool {
+        current_timestamp() > self.expires_at
     }
 }
 
@@ -129,7 +129,6 @@ impl Expiration for Command {
     }
 }
 
-// Order enum that contains both Call and Command
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Order {
     Call(Call),
@@ -137,7 +136,7 @@ pub enum Order {
 }
 
 impl Order {
-    /// Get the ID of the order
+    // Get the ID of the order
     pub fn id(&self) -> Uuid {
         match self {
             Order::Call(call) => call.id,
@@ -145,7 +144,7 @@ impl Order {
         }
     }
 
-    /// Get the target floor of the order
+    // Get the target floor of the order
     pub fn target_floor(&self) -> u8 {
         match self {
             Order::Call(call) => call.target_floor,
@@ -153,7 +152,7 @@ impl Order {
         }
     }
 
-    /// Get the creation timestamp of the order
+    // Get the creation timestamp of the order
     pub fn created_at(&self) -> Timestamp {
         match self {
             Order::Call(call) => call.created_at,
@@ -161,7 +160,7 @@ impl Order {
         }
     }
 
-    /// Get the expiration timestamp of the order
+    // Get the expiration timestamp of the order
     pub fn expires_at(&self) -> Timestamp {
         match self {
             Order::Call(call) => call.expires_at,
@@ -169,12 +168,22 @@ impl Order {
         }
     }
 
-    /// Get the direction for calls, None for commands
+    // Get the direction for calls, None for commands
     pub fn direction(&self) -> Option<Direction> {
         match self {
             Order::Call(call) => Some(call.direction),
             Order::Command(_) => None,
         }
+    }
+
+    // Check if this is a call
+    pub fn is_call(&self) -> bool {
+        matches!(self, Order::Call(_))
+    }
+
+    // Check if this is a command
+    pub fn is_command(&self) -> bool {
+        matches!(self, Order::Command(_))
     }
 }
 
@@ -257,5 +266,26 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_order_enum_methods() {
+        setup_test_clock();
+
+        let call = Call::new(5, Direction::Up);
+        let command = Command::new(3);
+
+        let call_order = Order::from(call);
+        let command_order = Order::from(command);
+
+        assert_eq!(call_order.target_floor(), 5);
+        assert_eq!(call_order.direction(), Some(Direction::Up));
+        assert!(call_order.is_call());
+        assert!(!call_order.is_command());
+
+        assert_eq!(command_order.target_floor(), 3);
+        assert_eq!(command_order.direction(), None);
+        assert!(!command_order.is_call());
+        assert!(command_order.is_command());
     }
 }
