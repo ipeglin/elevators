@@ -11,3 +11,4 @@ lazy_static = "1.5.0"
 log = "0.4.22"
 serde = { version = "1.0.204", features = ["derive"] }
 toml = "0.8.14"
+uhlc = "0.8.1"
