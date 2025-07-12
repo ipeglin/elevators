@@ -3,3 +3,7 @@ num_floors = 4
 driver_address = "localhost"
 driver_port = 15657
 driver_channel_poll_timeout_milliseconds = 10
+
+[network]
+address = "localhost"
+port = 1234
